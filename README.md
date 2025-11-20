@@ -241,10 +241,97 @@ All route information has been transcribed from the excellent PDF guides publish
 
 This app is not affiliated with the creators of the original guides.
 
+## Adding New Climbs (Data Migrations)
+
+To ensure that new climbs are added consistently across all environments (local, staging, production), we use Laravel Migrations. This approach guarantees that data changes are version-controlled and automatically applied during deployment.
+
+### Process
+
+1.  **Create a new migration**:
+    Run the following command to create a migration file. Give it a descriptive name.
+    ```bash
+    php artisan make:migration add_new_climb_to_sector_name
+    ```
+
+2.  **Define the data changes**:
+    Open the newly created file in `database/migrations`.
+    - In the `up()` method, use `DB::table('climbs')->insert(...)` to add the new record.
+    - In the `down()` method, use `DB::table('climbs')->where(...)->delete()` to remove it (allowing for rollbacks).
+
+    **Example:**
+    ```php
+    <?php
+
+    use Illuminate\Database\Migrations\Migration;
+    use Illuminate\Database\Schema\Blueprint;
+    use Illuminate\Support\Facades\Schema;
+    use Illuminate\Support\Facades\DB;
+
+    return new class extends Migration
+    {
+        public function up(): void
+        {
+            // 1. Find the parent IDs (Crag, Sector, Area) if needed, or hardcode if stable
+            // It's safer to look them up to avoid ID mismatches
+            $cragId = DB::table('crags')->where('name', 'forest-rock')->value('id');
+
+            if ($cragId) {
+                DB::table('climbs')->insert([
+                    'crag_id' => $cragId,
+                    'name' => 'New Super Problem',
+                    'grade' => '7A',
+                    'description' => 'Start on the obvious jug...',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        public function down(): void
+        {
+            DB::table('climbs')->where('name', 'New Super Problem')->delete();
+        }
+    };
+    ```
+
+3.  **Deploy**:
+    When you push your changes and deploy, the deployment script runs `php artisan migrate`, which will execute your new migration and add the climb to the production database.
+
 ## License
 
-[Your License Here]
+MIT License
+
+Copyright (c) 2025 Leicestershire Bouldering
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Contributing
 
-[Your Contributing Guidelines Here]
+We welcome contributions from the community! Whether it's fixing a bug, adding a new feature, or updating climbing data, your help is appreciated.
+
+### How to Contribute
+
+1.  **Fork the repository** on GitHub.
+2.  **Clone your fork** locally.
+3.  **Create a new branch** for your feature or fix.
+4.  **Make your changes**.
+5.  **Commit and push** to your fork.
+6.  **Submit a Pull Request** (PR) to the `main` branch of this repository.
+
+Please ensure your code follows the existing style and conventions. If adding new features, please include relevant tests.
