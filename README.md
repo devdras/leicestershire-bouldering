@@ -82,26 +82,44 @@ docker build -t leicestershire-bouldering .
 
 ### 2. Run the Container
 
-You need to mount a volume for the SQLite database to persist data, and provide an `.env` file.
+You can run the container by passing environment variables directly or by using an `.env` file. You also need to mount a volume to persist the SQLite database.
+
+**Option A: Using Environment Variables (Recommended for simple setups)**
 
 ```bash
-# Create a file for the database on your host
-touch $(pwd)/database.sqlite
-
-# Run the container
 docker run -d \
   -p 80:80 \
   --name lb-app \
-  -v $(pwd)/database.sqlite:/var/www/html/database/database.sqlite \
-  -v $(pwd)/.env:/var/www/html/.env \
+  -e APP_KEY=base64:YOUR_GENERATED_KEY \
+  -e APP_DEBUG=false \
+  -e APP_ENV=production \
+  -e DB_CONNECTION=sqlite \
+  -e DB_DATABASE=/var/www/html/database/database.sqlite \
+  -v lb-data:/var/www/html/database \
   leicestershire-bouldering
 ```
 
-**Note:** Ensure your `.env` file has `DB_CONNECTION=sqlite` and `DB_DATABASE=/var/www/html/database/database.sqlite`.
+**Option B: Using an .env file**
 
-### 3. Initial Setup (Inside Container)
+```bash
+docker run -d \
+  -p 80:80 \
+  --name lb-app \
+  --env-file .env \
+  -v lb-data:/var/www/html/database \
+  leicestershire-bouldering
+```
 
-After starting the container for the first time, run migrations:
+### 3. Database Persistence & Auto-Creation
+
+We use a Docker volume (e.g., `lb-data`) mounted to `/var/www/html/database` to ensure your data survives container restarts.
+
+*   **Auto-Creation**: The container includes a startup script that checks if `database.sqlite` exists in the mounted volume. If it's missing (e.g., first run), it will automatically create an empty database file for you.
+*   **Migrations**: On the very first run, you will need to run migrations to create the tables.
+
+### 4. Initial Setup (Inside Container)
+
+After starting the container for the first time, run the migrations and seed the initial data:
 
 ```bash
 docker exec -it lb-app php artisan migrate --seed --force

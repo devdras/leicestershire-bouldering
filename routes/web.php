@@ -14,7 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/ticks/{tick}', [App\Http\Controllers\TickController::class, 'destroy'])->name('ticks.destroy');
 });
 
-Route::get('/', [App\Http\Controllers\AreaController::class, 'index']);
+
 
 Route::get('/areas', [App\Http\Controllers\AreaController::class, 'index'])->name('areas.index');
 Route::get('/sectors', [App\Http\Controllers\AreaController::class, 'allSectors'])->name('sectors.index');
